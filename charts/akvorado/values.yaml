@@ -1,0 +1,833 @@
+# Default values for directus.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  # -- Directus image docker repository
+  repository: directus/directus
+  # -- Pull policy for docker image
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+# -- Image Pull Secrets in k8s for docker image
+imagePullSecrets: []
+# -- Helm name override in Chart.yaml. This name is being used for resource naming
+nameOverride: ""
+# -- Completely overrides Chart name
+fullnameOverride: ""
+
+# -- Init Containers for Directus pod
+initContainers: []
+#  - name: myinitcontainer
+#    image: alpine:latest
+#    restartPolicy: Always
+#    command:
+#      - sh
+#      - -c
+#      - cat /opt/file.txt
+#    volumeMounts:
+#      - name: opt
+#        mountPath: /opt
+
+# -- Sidecars for Directus pod
+sidecars: []
+#  - name: busybox
+#    image: busybox:latest
+#    imagePullPolicy: Always
+#    command:
+#      - /bin/sh
+#      - -c
+#      - sleep 3600;
+
+sidecar:
+  # IMPORTANT! This feature is going to be DEPRECATED in the next release in favour of `sidecars`
+  # -- Sidecars for Directus pod
+  enabled: false
+  repository: busybox
+  tag: latest
+  pullPolicy: Always
+  # -- Command to run in sidecar docker image
+  command: 
+    - /bin/sh
+    - -c
+    - sleep 3600;
+  securityContext: {}
+    # allowPrivilegeEscalation: true
+
+adminEmail: "admin@example.com"
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  # -- Enable TLS in PUBLIC_URL
+  enableTLS: true
+  className: ""
+  # -- Ingress annotations. Usually used in cloud environments
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    # -- Hostname to expose. You should create CNAME DNS record with this hostname to redirect to ALB DNS name
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+extraEnvVars: []
+
+attachExistingSecrets: []
+  # - existingSecretInKubernetes
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: http
+startupProbe:
+  enabled: false
+  httpGet:
+    path: /
+    port: http
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+extraVolumes: []
+
+extraVolumeMounts: []
+
+
+kafka:
+  # -- The switch to switch off the installation of the kafka, the rest of the settings are being used during the installation
+  enabled: true
+  auth:
+    # -- If you want to use your own mariadb secret,
+    # set `createSecrets` to false and update `mariadb.auth.existingSecret` field with the correct secret name
+    createSecrets: true
+    # -- The secret has to contain the following keys
+    # `mariadb-root-password`,
+    # `mariadb-replication-password`,
+    # `mariadb-password`,
+    # `ADMIN_PASSWORD`,
+    # `KEY`,
+    # `SECRET`
+    existingSecret: "directus-secret"
+    # -- Directus datatbase name
+    database: directus
+    # -- The user that is being used to connect to database
+    username: "directus"
+    configs:
+      - AKVORADO_CFG_ORCHESTRATOR_HTTP_LISTEN=127.0.0.1:8081
+      - AKVORADO_CFG_ORCHESTRATOR_KAFKA_TOPIC=test-topic
+      - AKVORADO_CFG_ORCHESTRATOR_KAFKA_BROKERS=192.0.2.1:9092,192.0.2.2:9092
+    extraEnvVars: []
+  # -- The URL to the mariadb instance, otherwise leave it empty to use one that installed in the cluster
+  mariadbURL: ""
+
+redis:
+# -- Switch to enable Redis
+  enabled: true
+  auth:
+    # -- Existing secret name with Redis password
+    existingSecret: ""
+    # -- The key in the secret with password 
+    existingSecretPasswordKey: ""
+  replica:
+    # -- Amount of Redis replicas
+    replicaCount: 0
+
+clickhouse:
+  enabled: false
+
+
+
+.Values.inlet.persistence.enabled (not .Values.inlet.persistence.existingClaim)
+
+
+## @section Akvorado Inlet Parameters
+inlet:
+  ## @param inlet.enabled Enables Akvorado Inlet deployment
+  ##
+  enabled: false
+  ## Bitnami Akvorado Inlet image
+  ## @param inlet.image.registry [default: REGISTRY_NAME] Akvorado Inlet image registry
+  ## @param inlet.image.repository [default: REPOSITORY_NAME/akvorado-inlet] Akvorado Inlet image repository
+  ## @skip inlet.image.tag Akvorado Inlet image tag (immutable tags are recommended)
+  ## @param inlet.image.digest Akvorado Inlet image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+  ## @param inlet.image.pullPolicy Akvorado Inlet image pull policy
+  ## @param inlet.image.pullSecrets Akvorado Inlet image pull secrets
+  ## @param inlet.image.debug Enable Akvorado Inlet image debug mode
+  ##
+  image:
+    registry: docker.io
+    repository: bitnami/akvorado-inlet
+    tag: 3.0.0-debian-12-r1
+    digest: ""
+    ## Specify a imagePullPolicy
+    ## ref: http://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images
+    ##
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## e.g:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
+    ## Enable debug mode
+    ##
+    debug: false
+  ## Akvorado Inlet service parameters
+  ##
+  service:
+    ## @param inlet.service.type Akvorado Inlet service type
+    ##
+    type: ClusterIP
+    ## @param inlet.service.ports.http Akvorado Inlet service web UI port
+    ##
+    ports:
+      http: 5601
+    ## Node ports to expose
+    ## @param inlet.service.nodePorts.http Node port for web UI
+    ## NOTE: choose port between <30000-32767>
+    ##
+    nodePorts:
+      http: ""
+    ## @param inlet.service.clusterIP Akvorado Inlet service Cluster IP
+    ## e.g.:
+    ## clusterIP: None
+    ##
+    clusterIP: ""
+    ## @param inlet.service.loadBalancerIP Akvorado Inlet service Load Balancer IP
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
+    ##
+    loadBalancerIP: ""
+    ## @param inlet.service.loadBalancerSourceRanges Akvorado Inlet service Load Balancer sources
+    ## ref: https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+    ## e.g:
+    ## loadBalancerSourceRanges:
+    ##   - 10.10.10.0/24
+    ##
+    loadBalancerSourceRanges: []
+    ## @param inlet.service.externalTrafficPolicy Akvorado Inlet service external traffic policy
+    ## ref http://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+    ##
+    externalTrafficPolicy: Cluster
+    ## @param inlet.service.annotations Additional custom annotations for Akvorado Inlet service
+    ##
+    annotations: {}
+    ## @param inlet.service.extraPorts Extra ports to expose in Akvorado Inlet service (normally used with the `sidecars` value)
+    ##
+    extraPorts: []
+    ## @param inlet.service.sessionAffinity Session Affinity for Kubernetes service, can be "None" or "ClientIP"
+    ## If "ClientIP", consecutive client requests will be directed to the same Pod
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+    ##
+    sessionAffinity: None
+    ## @param inlet.service.sessionAffinityConfig Additional settings for the sessionAffinity
+    ## sessionAffinityConfig:
+    ##   clientIP:
+    ##     timeoutSeconds: 300
+    ##
+    sessionAffinityConfig: {}
+    ## @param inlet.service.nameOverride String to fully override akvorado.inlet.servicename
+    ##
+    nameOverride: ""
+  ## Akvorado Inlet ingress parameters
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+  ##
+  ingress:
+    ## @param inlet.ingress.enabled Enable ingress record generation for Akvorado Inlet
+    ##
+    enabled: false
+    ## @param inlet.ingress.pathType Ingress path type
+    ##
+    pathType: ImplementationSpecific
+    ## @param inlet.ingress.apiVersion Force Ingress API version (automatically detected if not set)
+    ##
+    apiVersion: ""
+    ## @param inlet.ingress.hostname Default host for the ingress record
+    ##
+    hostname: akvorado-inlet.local
+    ## @param inlet.ingress.path Default path for the ingress record
+    ## NOTE: You may need to set this to '/*' in order to use this with ALB ingress controllers
+    ##
+    path: /
+    ## @param inlet.ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+    ## Use this parameter to set the required annotations for cert-manager, see
+    ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+    ## e.g:
+    ## annotations:
+    ##   kubernetes.io/ingress.class: nginx
+    ##   cert-manager.io/cluster-issuer: cluster-issuer-name
+    ##
+    annotations: {}
+    ## @param inlet.ingress.tls Enable TLS configuration for the host defined at `inlet.ingress.hostname` parameter
+    ## TLS certificates will be retrieved from a TLS secret with name: `{{- printf "%s-tls" .Values.ingress.hostname }}`
+    ## You can:
+    ##   - Use the `ingress.secrets` parameter to create this TLS secret
+    ##   - Rely on cert-manager to create it by setting the corresponding annotations
+    ##   - Rely on Helm to create self-signed certificates by setting `ingress.selfSigned=true`
+    ##
+    tls: false
+    ## @param inlet.ingress.selfSigned Create a TLS secret for this ingress record using self-signed certificates generated by Helm
+    ##
+    selfSigned: false
+    ## @param inlet.ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+    ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster .
+    ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
+    ##
+    ingressClassName: ""
+    ## @param inlet.ingress.extraHosts An array with additional hostname(s) to be covered with the ingress record
+    ## e.g:
+    ## extraHosts:
+    ##   - name: akvorado-inlet.local
+    ##     path: /
+    ##
+    extraHosts: []
+    ## @param inlet.ingress.extraPaths An array with additional arbitrary paths that may need to be added to the ingress under the main host
+    ## e.g:
+    ## extraPaths:
+    ## - path: /*
+    ##   backend:
+    ##     serviceName: ssl-redirect
+    ##     servicePort: use-annotation
+    ##
+    extraPaths: []
+    ## @param inlet.ingress.extraTls TLS configuration for additional hostname(s) to be covered with this ingress record
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
+    ## e.g:
+    ## extraTls:
+    ## - hosts:
+    ##     - akvorado-inlet.local
+    ##   secretName: akvorado-inlet.local-tls
+    ##
+    extraTls: []
+    ## @param inlet.ingress.secrets Custom TLS certificates as secrets
+    ## NOTE: 'key' and 'certificate' are expected in PEM format
+    ## NOTE: 'name' should line up with a 'secretName' set further up
+    ## If it is not set, and you're using cert-manager, this is unneeded, as it will create a secret for you with valid certificates
+    ## If it is not set, and you're NOT using cert-manager either, self-signed certificates will be created valid for 365 days
+    ## It is also possible to create and manage the certificates outside of this helm chart
+    ## Please see README.md for more information
+    ## e.g:
+    ## secrets:
+    ##   - name: akvorado-inlet.local-tls
+    ##     key: |-
+    ##       -----BEGIN RSA PRIVATE KEY-----
+    ##       ...
+    ##       -----END RSA PRIVATE KEY-----
+    ##     certificate: |-
+    ##       -----BEGIN CERTIFICATE-----
+    ##       ...
+    ##       -----END CERTIFICATE-----
+    ##
+    secrets: []
+    ## @param inlet.ingress.extraRules Additional rules to be covered with this ingress record
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules
+    ## e.g:
+    ## extraRules:
+    ## - host: example.local
+    ##     http:
+    ##       path: /
+    ##       backend:
+    ##         service:
+    ##           name: example-svc
+    ##           port:
+    ##             name: http
+    ##
+    extraRules: []
+  ## @param inlet.containerPorts.http Akvorado Inlet HTTP port
+  ##
+  containerPorts:
+    http: 5601
+  ## @param inlet.password Password for Akvorado Inlet
+  ##
+  password: ""
+  ## @param inlet.replicaCount Number of data-only replicas to deploy
+  ##
+  replicaCount: 1
+  ## Pod Disruption Budget configuration
+  ## ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb
+  ## @param inlet.pdb.create Enable/disable a Pod Disruption Budget creation
+  ## @param inlet.pdb.minAvailable Minimum number/percentage of pods that should remain scheduled
+  ## @param inlet.pdb.maxUnavailable Maximum number/percentage of pods that may be made unavailable. Defaults to `1` if both `inlet.pdb.minAvailable` and `inlet.pdb.maxUnavailable` are empty.
+  ##
+  pdb:
+    create: true
+    minAvailable: ""
+    maxUnavailable: ""
+  ## @param inlet.nameOverride String to partially override akvorado.inlet.fullname
+  ##
+  nameOverride: ""
+  ## @param inlet.fullnameOverride String to fully override akvorado.inlet.fullname
+  ##
+  fullnameOverride: ""
+  ## @param inlet.servicenameOverride String to fully override akvorado.inlet.servicename
+  ## DEPRECATED: Use inlet.service.nameOverride instead
+  ##
+  servicenameOverride: ""
+  ## @param inlet.updateStrategy.type Data-only nodes statefulset strategy type
+  ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+  ##
+  updateStrategy:
+    type: RollingUpdate
+  ## Akvorado resource requests and limits
+  ## ref: http://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+  ## @param inlet.resourcesPreset Set container resources according to one common preset (allowed values: none, nano, micro, small, medium, large, xlarge, 2xlarge). This is ignored if inlet.resources is set (inlet.resources is recommended for production).
+  ## More information: https://github.com/bitnami/charts/blob/main/bitnami/common/templates/_resources.tpl#L15
+  ##
+  resourcesPreset: "small"
+  ## @param inlet.resources Set container requests and limits for different resources like CPU or memory (essential for production workloads)
+  ## Example:
+  ## resources:
+  ##   requests:
+  ##     cpu: 2
+  ##     memory: 512Mi
+  ##   limits:
+  ##     cpu: 3
+  ##     memory: 1024Mi
+  ##
+  resources: {}
+  ## @param inlet.heapSize Akvorado data node heap size.
+  ## Note: The recommended heapSize is half of the container's memory.
+  ## If omitted, it will be automatically set.
+  ## Example:
+  ##   heapSize: 128m
+  ##
+  heapSize: 1024m
+  ## Configure Pods Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+  ## @param inlet.podSecurityContext.enabled Enabled data pods' Security Context
+  ## @param inlet.podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
+  ## @param inlet.podSecurityContext.sysctls Set kernel settings using the sysctl interface
+  ## @param inlet.podSecurityContext.supplementalGroups Set filesystem extra groups
+  ## @param inlet.podSecurityContext.fsGroup Set inlet pod's Security Context fsGroup
+  ##
+  podSecurityContext:
+    enabled: true
+    fsGroupChangePolicy: Always
+    sysctls: []
+    supplementalGroups: []
+    fsGroup: 1001
+  ## Configure Container Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+  ## @param inlet.containerSecurityContext.enabled Enabled containers' Security Context
+  ## @param inlet.containerSecurityContext.seLinuxOptions [object,nullable] Set SELinux options in container
+  ## @param inlet.containerSecurityContext.runAsUser Set containers' Security Context runAsUser
+  ## @param inlet.containerSecurityContext.runAsGroup Set containers' Security Context runAsGroup
+  ## @param inlet.containerSecurityContext.runAsNonRoot Set container's Security Context runAsNonRoot
+  ## @param inlet.containerSecurityContext.privileged Set container's Security Context privileged
+  ## @param inlet.containerSecurityContext.readOnlyRootFilesystem Set container's Security Context readOnlyRootFilesystem
+  ## @param inlet.containerSecurityContext.allowPrivilegeEscalation Set container's Security Context allowPrivilegeEscalation
+  ## @param inlet.containerSecurityContext.capabilities.drop List of capabilities to be dropped
+  ## @param inlet.containerSecurityContext.seccompProfile.type Set container's Security Context seccomp profile
+  ##
+  containerSecurityContext:
+    enabled: true
+    seLinuxOptions: {}
+    runAsUser: 1001
+    runAsGroup: 1001
+    runAsNonRoot: true
+    privileged: false
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    seccompProfile:
+      type: "RuntimeDefault"
+  ## @param inlet.automountServiceAccountToken Mount Service Account token in pod
+  ##
+  automountServiceAccountToken: false
+  ## @param inlet.hostAliases data pods host aliases
+  ## https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
+  ##
+  hostAliases: []
+  ## @param inlet.podLabels Extra labels for data pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  ##
+  podLabels: {}
+  ## @param inlet.podAnnotations Annotations for data pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param inlet.podAffinityPreset Pod affinity preset. Ignored if `inlet.affinity` is set. Allowed values: `soft` or `hard`
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ##
+  podAffinityPreset: ""
+  ## @param inlet.podAntiAffinityPreset Pod anti-affinity preset. Ignored if `inlet.affinity` is set. Allowed values: `soft` or `hard`
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ##
+  podAntiAffinityPreset: ""
+  ## Node inlet.affinity preset
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+  ##
+  nodeAffinityPreset:
+    ## @param inlet.nodeAffinityPreset.type Node affinity preset type. Ignored if `inlet.affinity` is set. Allowed values: `soft` or `hard`
+    ##
+    type: ""
+    ## @param inlet.nodeAffinityPreset.key Node label key to match. Ignored if `inlet.affinity` is set
+    ##
+    key: ""
+    ## @param inlet.nodeAffinityPreset.values Node label values to match. Ignored if `inlet.affinity` is set
+    ## E.g.
+    ## values:
+    ##   - e2e-az1
+    ##   - e2e-az2
+    ##
+    values: []
+  ## @param inlet.affinity Affinity for data pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: `inlet.podAffinityPreset`, `inlet.podAntiAffinityPreset`, and `inlet.nodeAffinityPreset` will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param inlet.nodeSelector Node labels for data pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+  ##
+  nodeSelector: {}
+  ## @param inlet.tolerations Tolerations for data pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## @param inlet.priorityClassName data pods' priorityClassName
+  ##
+  priorityClassName: ""
+  ## @param inlet.schedulerName Name of the k8s scheduler (other than default) for data pods
+  ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
+  ##
+  schedulerName: ""
+  ## @param inlet.terminationGracePeriodSeconds In seconds, time the given to the Akvorado data pod needs to terminate gracefully
+  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods
+  ##
+  terminationGracePeriodSeconds: ""
+  ## @param inlet.topologySpreadConstraints Topology Spread Constraints for pod assignment spread across your cluster among failure-domains. Evaluated as a template
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/#spread-constraints-for-pods
+  ##
+  topologySpreadConstraints: []
+  ## Configure extra options for Akvorado data containers' liveness, readiness and startup probes
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
+  ## @param inlet.startupProbe.enabled Enable/disable the startup probe (data nodes pod)
+  ## @param inlet.startupProbe.initialDelaySeconds Delay before startup probe is initiated (data nodes pod)
+  ## @param inlet.startupProbe.periodSeconds How often to perform the probe (data nodes pod)
+  ## @param inlet.startupProbe.timeoutSeconds When the probe times out (data nodes pod)
+  ## @param inlet.startupProbe.successThreshold Minimum consecutive successes for the probe to be considered successful after having failed (data nodes pod)
+  ## @param inlet.startupProbe.failureThreshold Minimum consecutive failures for the probe to be considered failed after having succeeded
+  ##
+  startupProbe:
+    enabled: false
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 5
+  ## @param inlet.livenessProbe.enabled Enable/disable the liveness probe (data nodes pod)
+  ## @param inlet.livenessProbe.initialDelaySeconds Delay before liveness probe is initiated (data nodes pod)
+  ## @param inlet.livenessProbe.periodSeconds How often to perform the probe (data nodes pod)
+  ## @param inlet.livenessProbe.timeoutSeconds When the probe times out (data nodes pod)
+  ## @param inlet.livenessProbe.successThreshold Minimum consecutive successes for the probe to be considered successful after having failed (data nodes pod)
+  ## @param inlet.livenessProbe.failureThreshold Minimum consecutive failures for the probe to be considered failed after having succeeded
+  ##
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 180
+    periodSeconds: 20
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 8
+  ## @param inlet.readinessProbe.enabled Enable/disable the readiness probe (data nodes pod)
+  ## @param inlet.readinessProbe.initialDelaySeconds Delay before readiness probe is initiated (data nodes pod)
+  ## @param inlet.readinessProbe.periodSeconds How often to perform the probe (data nodes pod)
+  ## @param inlet.readinessProbe.timeoutSeconds When the probe times out (data nodes pod)
+  ## @param inlet.readinessProbe.successThreshold Minimum consecutive successes for the probe to be considered successful after having failed (data nodes pod)
+  ## @param inlet.readinessProbe.failureThreshold Minimum consecutive failures for the probe to be considered failed after having succeeded
+  ##
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 5
+  ## @param inlet.customStartupProbe Override default startup probe
+  ##
+  customStartupProbe: {}
+  ## @param inlet.customLivenessProbe Override default liveness probe
+  ##
+  customLivenessProbe: {}
+  ## @param inlet.customReadinessProbe Override default readiness probe
+  ##
+  customReadinessProbe: {}
+  ## @param inlet.command Override default container command (useful when using custom images)
+  ##
+  command: []
+  ## @param inlet.args Override default container args (useful when using custom images)
+  ##
+  args: []
+  ## @param inlet.lifecycleHooks for the data container(s) to automate configuration before or after startup
+  ##
+  lifecycleHooks: {}
+  ## @param inlet.extraEnvVars Array with extra environment variables to add to data nodes
+  ## e.g:
+  ## extraEnvVars:
+  ##   - name: FOO
+  ##     value: "bar"
+  ##
+  extraEnvVars: []
+  ## @param inlet.extraEnvVarsCM Name of existing ConfigMap containing extra env vars for data nodes
+  ##
+  extraEnvVarsCM: ""
+  ## @param inlet.extraEnvVarsSecret Name of existing Secret containing extra env vars for data nodes
+  ##
+  extraEnvVarsSecret: ""
+  ## @param inlet.extraVolumes Optionally specify extra list of additional volumes for the data pod(s)
+  ##
+  extraVolumes: []
+  ## @param inlet.extraVolumeMounts Optionally specify extra list of additional volumeMounts for the data container(s)
+  ##
+  extraVolumeMounts: []
+  ## @param inlet.sidecars Add additional sidecar containers to the data pod(s)
+  ## e.g:
+  ## sidecars:
+  ##   - name: your-image-name
+  ##     image: your-image
+  ##     imagePullPolicy: Always
+  ##     ports:
+  ##       - name: portname
+  ##         containerPort: 1234
+  ##
+  sidecars: []
+  ## @param inlet.initContainers Add additional init containers to the data pod(s)
+  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+  ## e.g:
+  ## initContainers:
+  ##  - name: your-image-name
+  ##    image: your-image
+  ##    imagePullPolicy: Always
+  ##    command: ['sh', '-c', 'echo "hello world"']
+  ##
+  initContainers: []
+  ## Pods Service Account
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+  ## @param inlet.serviceAccount.create Specifies whether a ServiceAccount should be created
+  ## @param inlet.serviceAccount.name Name of the service account to use. If not set and create is true, a name is generated using the fullname template.
+  ## @param inlet.serviceAccount.automountServiceAccountToken Automount service account token for the server service account
+  ## @param inlet.serviceAccount.annotations Annotations for service account. Evaluated as a template. Only used if `create` is `true`.
+  ##
+  serviceAccount:
+    create: false
+    name: ""
+    automountServiceAccountToken: false
+    annotations: {}
+  ## Network Policy configuration
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  ##
+  networkPolicy:
+    ## @param inlet.networkPolicy.enabled Enable creation of NetworkPolicy resources
+    ##
+    enabled: true
+    ## @param inlet.networkPolicy.allowExternal The Policy model to apply
+    ## When set to false, only pods with the correct client label will have network access to the ports Akvorado is
+    ## listening on. When true, Akvorado will accept connections from any source (with the correct destination port).
+    ##
+    allowExternal: true
+    ## @param inlet.networkPolicy.allowExternalEgress Allow the pod to access any range of port and all destinations.
+    ##
+    allowExternalEgress: true
+    ## @param inlet.networkPolicy.extraIngress [array] Add extra ingress rules to the NetworkPolicy
+    ## e.g:
+    ## extraIngress:
+    ##   - ports:
+    ##       - port: 1234
+    ##     from:
+    ##       - podSelector:
+    ##           - matchLabels:
+    ##               - role: frontend
+    ##       - podSelector:
+    ##           - matchExpressions:
+    ##               - key: role
+    ##                 operator: In
+    ##                 values:
+    ##                   - frontend
+    ##
+    extraIngress: []
+    ## @param inlet.networkPolicy.extraEgress [array] Add extra ingress rules to the NetworkPolicy
+    ## e.g:
+    ## extraEgress:
+    ##   - ports:
+    ##       - port: 1234
+    ##     to:
+    ##       - podSelector:
+    ##           - matchLabels:
+    ##               - role: frontend
+    ##       - podSelector:
+    ##           - matchExpressions:
+    ##               - key: role
+    ##                 operator: In
+    ##                 values:
+    ##                   - frontend
+    ##
+    extraEgress: []
+    ## @param inlet.networkPolicy.ingressNSMatchLabels [object] Labels to match to allow traffic from other namespaces
+    ## @param inlet.networkPolicy.ingressNSPodMatchLabels [object] Pod labels to match to allow traffic from other namespaces
+    ##
+    ingressNSMatchLabels: {}
+    ingressNSPodMatchLabels: {}
+  autoscaling:
+    vpa:
+      ## @param inlet.autoscaling.vpa.enabled Enable VPA
+      ##
+      enabled: false
+      ## @param inlet.autoscaling.vpa.annotations Annotations for VPA resource
+      ##
+      annotations: {}
+      ## @param inlet.autoscaling.vpa.controlledResources VPA List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
+      ##
+      controlledResources: []
+      ## @param inlet.autoscaling.vpa.maxAllowed VPA Max allowed resources for the pod
+      ## cpu: 200m
+      ## memory: 100Mi
+      maxAllowed: {}
+      ## @param inlet.autoscaling.vpa.minAllowed VPA Min allowed resources for the pod
+      ## cpu: 200m
+      ## memory: 100Mi
+      minAllowed: {}
+      updatePolicy:
+        ## @param inlet.autoscaling.vpa.updatePolicy.updateMode Autoscaling update policy Specifies whether recommended updates are applied when a Pod is started and whether recommended updates are applied during the life of a Pod
+        ## Possible values are "Off", "Initial", "Recreate", and "Auto".
+        ##
+        updateMode: Auto
+    hpa:
+      ## @param inlet.autoscaling.hpa.enabled Enable HPA for APISIX Data Plane
+      ##
+      enabled: false
+      ## @param inlet.autoscaling.hpa.minReplicas Minimum number of APISIX Data Plane replicas
+      ##
+      minReplicas: 3
+      ## @param inlet.autoscaling.hpa.maxReplicas Maximum number of APISIX Data Plane replicas
+      ##
+      maxReplicas: 11
+      ## @param inlet.autoscaling.hpa.targetCPU Target CPU utilization percentage
+      ##
+      targetCPU: ""
+      ## @param inlet.autoscaling.hpa.targetMemory Target Memory utilization percentage
+      ##
+      targetMemory: ""
+  ## TLS configuration
+  ##
+  tls:
+    ## @param inlet.tls.enabled Enable TLS for Akvorado Inlet webserver
+    ##
+    enabled: false
+    ## @param inlet.tls.existingSecret Existing secret containing the certificates for Akvorado Inlet webserver
+    ##
+    existingSecret: ""
+    ## @param inlet.tls.autoGenerated Create self-signed TLS certificates.
+    ## NOTE: If autoGenerated certs are enabled and a new node type is enabled using helm upgrade, make sure you remove previously existing TLS secrets.
+    ## Otherwise, the new node certs won't match the existing certs.
+    ##
+    autoGenerated: true
+  ## Enable persistence using Persistent Volume Claims
+  ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+  ##
+  persistence:
+    ## @param inlet.persistence.enabled Enable persistence using Persistent Volume Claims
+    ##
+    enabled: false
+    ## @param inlet.persistence.mountPath Path to mount the volume at.
+    ##
+    mountPath: /bitnami/akvorado-inlet
+    ## @param inlet.persistence.subPath The subdirectory of the volume to mount to, useful in dev environments and one PV for multiple services
+    ##
+    subPath: ""
+    ## @param inlet.persistence.storageClass Storage class of backing PVC
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    storageClass: ""
+    ## @param inlet.persistence.annotations Persistent Volume Claim annotations
+    ##
+    annotations: {}
+    ## @param inlet.persistence.accessModes Persistent Volume Access Modes
+    ##
+    accessModes:
+      - ReadWriteOnce
+    ## @param inlet.persistence.size Size of data volume
+    ##
+    size: 8Gi
+    ## @param inlet.persistence.existingClaim The name of an existing PVC to use for persistence
+    ##
+    existingClaim: ""
+    ## @param inlet.persistence.selector Selector to match an existing Persistent Volume for Akvorado data PVC
+    ## If set, the PVC can't have a PV dynamically provisioned for it
+    ## E.g.
+    ## selector:
+    ##   matchLabels:
+    ##     app: my-app
+    ##
+    selector: {}
+    ## @param inlet.persistence.dataSource Custom PVC data source
+    ##
+    dataSource: {}

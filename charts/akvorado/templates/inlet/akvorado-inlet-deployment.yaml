@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    akvorado.conntrack.fix: "true"
+    kompose.cmd: kompose convert
+    kompose.version: 1.36.0 (HEAD)
+    traefik.enable: "true"
+    traefik.http.routers.akvorado-inlet-metrics.entrypoints: private
+    traefik.http.routers.akvorado-inlet-metrics.observability.accesslogs: "false"
+    traefik.http.routers.akvorado-inlet-metrics.rule: PathPrefix(`/api/v0/inlet/metrics`)
+    traefik.http.routers.akvorado-inlet-metrics.service: akvorado-inlet
+    traefik.http.routers.akvorado-inlet.entrypoints: private
+    traefik.http.routers.akvorado-inlet.rule: PathPrefix(`/api/v0/inlet`)
+    traefik.http.services.akvorado-inlet.loadbalancer.server.port: "8080"
+  labels:
+    io.kompose.service: akvorado-inlet
+  name: akvorado-inlet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: akvorado-inlet
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        akvorado.conntrack.fix: "true"
+        kompose.cmd: kompose convert
+        kompose.version: 1.36.0 (HEAD)
+        traefik.enable: "true"
+        traefik.http.routers.akvorado-inlet-metrics.entrypoints: private
+        traefik.http.routers.akvorado-inlet-metrics.observability.accesslogs: "false"
+        traefik.http.routers.akvorado-inlet-metrics.rule: PathPrefix(`/api/v0/inlet/metrics`)
+        traefik.http.routers.akvorado-inlet-metrics.service: akvorado-inlet
+        traefik.http.routers.akvorado-inlet.entrypoints: private
+        traefik.http.routers.akvorado-inlet.rule: PathPrefix(`/api/v0/inlet`)
+        traefik.http.services.akvorado-inlet.loadbalancer.server.port: "8080"
+      labels:
+        io.kompose.service: akvorado-inlet
+    spec:
+      containers:
+        - args:
+            - inlet
+            - http://akvorado-orchestrator:8080
+          env:
+            - name: AKVORADO_CFG_INLET_METADATA_CACHEPERSISTFILE
+              value: /run/akvorado/metadata.cache
+          image: ghcr.io/akvorado/akvorado:main
+          name: akvorado-inlet
+          ports:
+            - containerPort: 2055
+              protocol: UDP
+            - containerPort: 6343
+              protocol: UDP
+            - containerPort: 10179
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /run/akvorado
+              name: akvorado-run
+      restartPolicy: Always
+      volumes:
+        - name: akvorado-run
+          persistentVolumeClaim:
+            claimName: akvorado-run

@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: akvorado-run
+  name: akvorado-run
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+
+{{- if and .Values.inlet.persistence.enabled (not .Values.inlet.persistence.existingClaim) -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.commonLabels "context" $ ) | nindent 4 }}
+    app.kubernetes.io/component: inlet
+  {{- if or .Values.inlet.persistence.annotations .Values.commonAnnotations }}
+  {{- $annotations := include "common.tplvalues.merge" (dict "values" (list .Values.inlet.persistence.annotations .Values.commonAnnotations) "context" .) }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+  {{- range .Values.inlet.persistence.accessModes }}
+    - {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.inlet.persistence.size | quote }}
+  {{- if .Values.inlet.persistence.selector }}
+  selector: {{- include "common.tplvalues.render" (dict "value" .Values.inlet.persistence.selector "context" $) | nindent 4 }}
+  {{- end }}
+  {{- if .Values.inlet.persistence.dataSource }}
+  dataSource: {{- include "common.tplvalues.render" (dict "value" .Values.inlet.persistence.dataSource "context" $) | nindent 4 }}
+  {{- end }}
+  {{- include "common.storage.class" (dict "persistence" .Values.inlet.persistence "global" .Values.global) | nindent 2 }}
+{{- end -}}

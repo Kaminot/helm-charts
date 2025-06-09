@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.36.0 (HEAD)
+    traefik.enable: "true"
+    traefik.http.middlewares.console-auth-headers.headers.customrequestheaders.Remote-Email: alfred@example.com
+    traefik.http.middlewares.console-auth-headers.headers.customrequestheaders.Remote-Name: Alfred Pennyworth
+    traefik.http.middlewares.console-auth-headers.headers.customrequestheaders.Remote-User: alfred
+    traefik.http.routers.akvorado-console-debug.entrypoints: private
+    traefik.http.routers.akvorado-console-debug.rule: PathPrefix(`/debug`)
+    traefik.http.routers.akvorado-console-debug.service: akvorado-console
+    traefik.http.routers.akvorado-console-metrics.observability.accesslogs: "false"
+    traefik.http.routers.akvorado-console-metrics.rule: PathPrefix(`/api/v0/console/metrics`)
+    traefik.http.routers.akvorado-console-metrics.service: akvorado-console
+    traefik.http.routers.akvorado-console.middlewares: console-auth-headers
+    traefik.http.routers.akvorado-console.rule: '!PathPrefix(`/debug`)'
+    traefik.http.services.akvorado-console.loadbalancer.server.port: "8080"
+  labels:
+    io.kompose.service: akvorado-console
+  name: akvorado-console
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: akvorado-console
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.36.0 (HEAD)
+        traefik.enable: "true"
+        traefik.http.middlewares.console-auth-headers.headers.customrequestheaders.Remote-Email: alfred@example.com
+        traefik.http.middlewares.console-auth-headers.headers.customrequestheaders.Remote-Name: Alfred Pennyworth
+        traefik.http.middlewares.console-auth-headers.headers.customrequestheaders.Remote-User: alfred
+        traefik.http.routers.akvorado-console-debug.entrypoints: private
+        traefik.http.routers.akvorado-console-debug.rule: PathPrefix(`/debug`)
+        traefik.http.routers.akvorado-console-debug.service: akvorado-console
+        traefik.http.routers.akvorado-console-metrics.observability.accesslogs: "false"
+        traefik.http.routers.akvorado-console-metrics.rule: PathPrefix(`/api/v0/console/metrics`)
+        traefik.http.routers.akvorado-console-metrics.service: akvorado-console
+        traefik.http.routers.akvorado-console.middlewares: console-auth-headers
+        traefik.http.routers.akvorado-console.rule: '!PathPrefix(`/debug`)'
+        traefik.http.services.akvorado-console.loadbalancer.server.port: "8080"
+      labels:
+        io.kompose.service: akvorado-console
+    spec:
+      containers:
+        - args:
+            - console
+            - http://akvorado-orchestrator:8080
+          env:
+            - name: AKVORADO_CFG_CONSOLE_DATABASE_DSN
+              value: /run/akvorado/console.sqlite
+          image: ghcr.io/akvorado/akvorado:main
+          name: akvorado-console
+          volumeMounts:
+            - mountPath: /run/akvorado
+              name: akvorado-console-db
+      restartPolicy: Always
+      volumes:
+        - name: akvorado-console-db
+          persistentVolumeClaim:
+            claimName: akvorado-console-db

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.36.0 (HEAD)
+    traefik.enable: "true"
+    traefik.http.routers.akvorado-orchestrator-metrics.entrypoints: private
+    traefik.http.routers.akvorado-orchestrator-metrics.observability.accesslogs: "false"
+    traefik.http.routers.akvorado-orchestrator-metrics.rule: PathPrefix(`/api/v0/orchestrator/metrics`)
+    traefik.http.routers.akvorado-orchestrator-metrics.service: akvorado-orchestrator
+    traefik.http.routers.akvorado-orchestrator.entrypoints: private
+    traefik.http.routers.akvorado-orchestrator.rule: PathPrefix(`/api/v0/orchestrator`)
+    traefik.http.services.akvorado-orchestrator.loadbalancer.server.port: "8080"
+  labels:
+    io.kompose.service: akvorado-orchestrator
+  name: akvorado-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: akvorado-orchestrator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.36.0 (HEAD)
+        traefik.enable: "true"
+        traefik.http.routers.akvorado-orchestrator-metrics.entrypoints: private
+        traefik.http.routers.akvorado-orchestrator-metrics.observability.accesslogs: "false"
+        traefik.http.routers.akvorado-orchestrator-metrics.rule: PathPrefix(`/api/v0/orchestrator/metrics`)
+        traefik.http.routers.akvorado-orchestrator-metrics.service: akvorado-orchestrator
+        traefik.http.routers.akvorado-orchestrator.entrypoints: private
+        traefik.http.routers.akvorado-orchestrator.rule: PathPrefix(`/api/v0/orchestrator`)
+        traefik.http.services.akvorado-orchestrator.loadbalancer.server.port: "8080"
+      labels:
+        io.kompose.service: akvorado-orchestrator
+    spec:
+      containers:
+        - args:
+            - orchestrator
+            - /etc/akvorado/akvorado.yaml
+          image: ghcr.io/akvorado/akvorado:main
+          name: akvorado-orchestrator
+          volumeMounts:
+            - mountPath: /etc/akvorado
+              name: akvorado-orchestrator-claim0
+              readOnly: true
+            - mountPath: /usr/share/GeoIP
+              name: akvorado-geoip
+              readOnly: true
+      restartPolicy: Always
+      volumes:
+        - name: akvorado-orchestrator-claim0
+          persistentVolumeClaim:
+            claimName: akvorado-orchestrator-claim0
+            readOnly: true
+        - name: akvorado-geoip
+          persistentVolumeClaim:
+            claimName: akvorado-geoip
+            readOnly: true
