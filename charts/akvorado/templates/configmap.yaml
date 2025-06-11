@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "directus.fullname" . }}-configmap
+  name: {{ include "akvorado.fullname" . }}-configmap
   labels:
-    app.kubernetes.io/name: {{ include "directus.name" . }}
+    app.kubernetes.io/name: {{ include "akvorado.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "directus.chart" . }}
+    helm.sh/chart: {{ include "akvorado.chart" . }}
 data:
   DB_CLIENT: "mysql"
   DB_HOST: {{- if .Values.mariadb.mariadbURL }} "{{ .Values.mariadb.mariadbURL }}" {{- else }} "{{ .Release.Name }}-mariadb.{{ .Release.Namespace }}.svc.cluster.local" {{- end }}

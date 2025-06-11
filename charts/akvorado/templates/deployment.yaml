@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "directus.fullname" . }}
+  name: {{ include "akvorado.fullname" . }}
   labels:
-    {{- include "directus.labels" . | nindent 4 }}
+    {{- include "akvorado.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "directus.selectorLabels" . | nindent 6 }}
+      {{- include "akvorado.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,18 +18,18 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "directus.selectorLabels" . | nindent 8 }}
+        {{- include "akvorado.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "directus.serviceAccountName" . }}
+      serviceAccountName: {{ include "akvorado.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.initContainers }}
       initContainers:
-        {{- include "directus.render" ( dict "value" .Values.initContainers "context" $ ) | nindent 8 }}
+        {{- include "akvorado.render" ( dict "value" .Values.initContainers "context" $ ) | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -43,7 +43,7 @@ spec:
                 name: {{ $val }}
             {{- end }}
             - configMapRef:
-                name: {{ include "directus.fullname" . }}-configmap
+                name: {{ include "akvorado.fullname" . }}-configmap
           env:
             - name: DB_PASSWORD
               valueFrom:
@@ -100,7 +100,7 @@ spec:
           volumeMounts:
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
         {{- if .Values.sidecars }}
-        {{- include "directus.render" ( dict "value" .Values.sidecars "context" $ ) | nindent 8 }}
+        {{- include "akvorado.render" ( dict "value" .Values.sidecars "context" $ ) | nindent 8 }}
         {{- end }}
         {{- if .Values.sidecar.enabled }}
         - name: {{ .Chart.Name }}-sidecar

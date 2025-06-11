@@ -1,3 +1,4 @@
+{{- if .Values.console.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,13 +19,15 @@ metadata:
     traefik.http.routers.akvorado-console.rule: '!PathPrefix(`/debug`)'
     traefik.http.services.akvorado-console.loadbalancer.server.port: "8080"
   labels:
-    io.kompose.service: akvorado-console
-  name: akvorado-console
+    {{- include "akvorado.labels" . | nindent 4 }}
+    app.kubernetes.io/component: console
+  name: {{ include "akvorado.console.fullname" . }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.console.replicaCount }}
   selector:
     matchLabels:
-      io.kompose.service: akvorado-console
+      {{- include "akvorado.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: console
   strategy:
     type: Recreate
   template:
@@ -46,22 +49,29 @@ spec:
         traefik.http.routers.akvorado-console.rule: '!PathPrefix(`/debug`)'
         traefik.http.services.akvorado-console.loadbalancer.server.port: "8080"
       labels:
-        io.kompose.service: akvorado-console
+        {{- include "akvorado.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: console
     spec:
       containers:
-        - args:
+        - name: {{ include "akvorado.console.name" . }}
+          args:
             - console
             - http://akvorado-orchestrator:8080
           env:
             - name: AKVORADO_CFG_CONSOLE_DATABASE_DSN
               value: /run/akvorado/console.sqlite
-          image: ghcr.io/akvorado/akvorado:main
-          name: akvorado-console
+          image: "{{ .Values.console.image.repository }}:{{ .Values.console.image.tag }}"
+          imagePullPolicy: {{ .Values.console.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.console.containerPorts.http }}
+              protocol: TCP
           volumeMounts:
-            - mountPath: /run/akvorado
+            - mountPath: {{ .Values.console.persistence.mountPath }}
               name: akvorado-console-db
       restartPolicy: Always
       volumes:
         - name: akvorado-console-db
           persistentVolumeClaim:
-            claimName: akvorado-console-db
+            claimName: {{ include "akvorado.console.fullname" . }}
+{{- end }}

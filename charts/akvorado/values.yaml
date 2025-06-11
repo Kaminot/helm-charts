@@ -246,12 +246,18 @@ inlet:
     ## @param inlet.service.ports.http Akvorado Inlet service web UI port
     ##
     ports:
+      netflow: 2055
+      sflow: 6343
       http: 5601
     ## Node ports to expose
+    ## @param inlet.service.nodePorts.netflow Node port for Netflow
+    ## @param inlet.service.nodePorts.sflow Node port for Sflow
     ## @param inlet.service.nodePorts.http Node port for web UI
     ## NOTE: choose port between <30000-32767>
     ##
     nodePorts:
+      netflow: ""
+      sflow: ""
       http: ""
     ## @param inlet.service.clusterIP Akvorado Inlet service Cluster IP
     ## e.g.:
@@ -397,10 +403,14 @@ inlet:
     ##             name: http
     ##
     extraRules: []
+  ## @param inlet.containerPorts.netflow Akvorado Inlet Netflow port
+  ## @param inlet.containerPorts.sflow Akvorado Inlet Sflow port
   ## @param inlet.containerPorts.http Akvorado Inlet HTTP port
   ##
   containerPorts:
-    http: 5601
+    netflow: 2055
+    sflow: 6343
+    http: 10179
   ## @param inlet.password Password for Akvorado Inlet
   ##
   password: ""
@@ -831,3 +841,37 @@ inlet:
     ## @param inlet.persistence.dataSource Custom PVC data source
     ##
     dataSource: {}
+
+console:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: ghcr.io/akvorado/akvorado
+    tag: main
+    pullPolicy: IfNotPresent
+  containerPorts:
+    http: 8080
+  persistence:
+    enabled: true
+    mountPath: /run/akvorado
+    size: 100Mi
+    accessModes:
+      - ReadWriteOnce
+    existingClaim: ""
+
+orchestrator:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: ghcr.io/akvorado/akvorado
+    tag: main
+    pullPolicy: IfNotPresent
+  containerPorts:
+    http: 8080
+  persistence:
+    enabled: true
+    mountPath: /etc/akvorado
+    size: 100Mi
+    accessModes:
+      - ReadOnlyMany
+    existingClaim: ""

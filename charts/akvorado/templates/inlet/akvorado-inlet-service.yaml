@@ -1,33 +1,59 @@
+{{- if .Values.inlet.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    akvorado.conntrack.fix: "true"
-    kompose.cmd: kompose convert
-    kompose.version: 1.36.0 (HEAD)
-    traefik.enable: "true"
-    traefik.http.routers.akvorado-inlet-metrics.entrypoints: private
-    traefik.http.routers.akvorado-inlet-metrics.observability.accesslogs: "false"
-    traefik.http.routers.akvorado-inlet-metrics.rule: PathPrefix(`/api/v0/inlet/metrics`)
-    traefik.http.routers.akvorado-inlet-metrics.service: akvorado-inlet
-    traefik.http.routers.akvorado-inlet.entrypoints: private
-    traefik.http.routers.akvorado-inlet.rule: PathPrefix(`/api/v0/inlet`)
-    traefik.http.services.akvorado-inlet.loadbalancer.server.port: "8080"
+  name: {{ include "akvorado.inlet.fullname" . }}
   labels:
-    io.kompose.service: akvorado-inlet
-  name: akvorado-inlet
+    {{- include "akvorado.labels" . | nindent 4 }}
+  {{- with .Values.inlet.service.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
+  type: {{ .Values.inlet.service.type }}
+  {{- if .Values.inlet.service.clusterIP }}
+  clusterIP: {{ .Values.inlet.service.clusterIP }}
+  {{- end }}
+  {{- if .Values.inlet.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.inlet.service.loadBalancerIP }}
+  {{- end }}
+  {{- if .Values.inlet.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges: {{- toYaml .Values.inlet.service.loadBalancerSourceRanges | nindent 4 }}
+  {{- end }}
+  {{- if .Values.inlet.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.inlet.service.externalTrafficPolicy }}
+  {{- end }}
+  {{- if .Values.inlet.service.sessionAffinity }}
+  sessionAffinity: {{ .Values.inlet.service.sessionAffinity }}
+  {{- end }}
+  {{- if .Values.inlet.service.sessionAffinityConfig }}
+  sessionAffinityConfig: {{- toYaml .Values.inlet.service.sessionAffinityConfig | nindent 4 }}
+  {{- end }}
   ports:
-    - name: "2055"
-      port: 2055
+    - name: netflow
+      port: {{ .Values.inlet.service.ports.netflow }}
       protocol: UDP
-      targetPort: 2055
-    - name: "6343"
-      port: 6343
+      targetPort: netflow
+      {{- if .Values.inlet.service.nodePorts.netflow }}
+      nodePort: {{ .Values.inlet.service.nodePorts.netflow }}
+      {{- end }}
+    - name: sflow
+      port: {{ .Values.inlet.service.ports.sflow }}
       protocol: UDP
-      targetPort: 6343
-    - name: "10179"
-      port: 10179
-      targetPort: 10179
+      targetPort: sflow
+      {{- if .Values.inlet.service.nodePorts.sflow }}
+      nodePort: {{ .Values.inlet.service.nodePorts.sflow }}
+      {{- end }}
+    - name: http
+      port: {{ .Values.inlet.service.ports.http }}
+      targetPort: http
+      protocol: TCP
+      {{- if .Values.inlet.service.nodePorts.http }}
+      nodePort: {{ .Values.inlet.service.nodePorts.http }}
+      {{- end }}
+  {{- if .Values.inlet.service.extraPorts }}
+    {{- toYaml .Values.inlet.service.extraPorts | nindent 4 }}
+  {{- end }}
   selector:
-    io.kompose.service: akvorado-inlet
+    {{- include "akvorado.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: inlet
+{{- end }}
