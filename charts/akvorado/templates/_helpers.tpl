@@ -6,6 +6,28 @@ Expand the name of the chart.
 {{- end }}
 
 {{/*
+Return the name for the inlet component
+*/}}
+{{- define "akvorado.inlet.name" -}}
+{{- if .Values.inlet.nameOverride -}}
+{{- printf "%s" .Values.inlet.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-inlet" (include "akvorado.name" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Return the fully qualified name for the inlet component
+*/}}
+{{- define "akvorado.inlet.fullname" -}}
+{{- if .Values.inlet.fullnameOverride -}}
+{{- .Values.inlet.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-inlet" (include "akvorado.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
@@ -20,6 +42,50 @@ If release name contains chart name it will be used as a full name.
 {{- else }}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
 {{- end }}
+{{- end }}
+
+{{/*
+Return the name for the console component
+*/}}
+{{- define "akvorado.console.name" -}}
+{{- if .Values.console.nameOverride -}}
+{{- printf "%s" .Values.console.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-console" (include "akvorado.name" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Return the fully qualified name for the console component
+*/}}
+{{- define "akvorado.console.fullname" -}}
+{{- if .Values.console.fullnameOverride -}}
+{{- .Values.console.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-console" (include "akvorado.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Return the name for the orchestrator component
+*/}}
+{{- define "akvorado.orchestrator.name" -}}
+{{- if .Values.orchestrator.nameOverride -}}
+{{- printf "%s" .Values.orchestrator.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-orchestrator" (include "akvorado.name" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Return the fully qualified name for the orchestrator component
+*/}}
+{{- define "akvorado.orchestrator.fullname" -}}
+{{- if .Values.orchestrator.fullnameOverride -}}
+{{- .Values.orchestrator.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-orchestrator" (include "akvorado.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
 {{- end }}
 {{- end }}
 

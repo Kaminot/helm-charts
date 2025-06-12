@@ -1,3 +1,4 @@
+{{- if .Values.inlet.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,9 +16,9 @@ metadata:
     traefik.http.services.akvorado-inlet.loadbalancer.server.port: "8080"
   labels:
     io.kompose.service: akvorado-inlet
-  name: akvorado-inlet
+  name: {{ include "akvorado.inlet.fullname" . }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.inlet.replicaCount }}
   selector:
     matchLabels:
       io.kompose.service: akvorado-inlet
@@ -41,26 +42,30 @@ spec:
         io.kompose.service: akvorado-inlet
     spec:
       containers:
-        - args:
+        - name: {{ include "akvorado.inlet.name" . }}
+          image: ghcr.io/akvorado/akvorado:main
+          args:
             - inlet
             - http://akvorado-orchestrator:8080
           env:
             - name: AKVORADO_CFG_INLET_METADATA_CACHEPERSISTFILE
               value: /run/akvorado/metadata.cache
-          image: ghcr.io/akvorado/akvorado:main
-          name: akvorado-inlet
           ports:
-            - containerPort: 2055
+            - name: netflow
+              containerPort: {{ .Values.inlet.containerPorts.netflow }}
               protocol: UDP
-            - containerPort: 6343
+            - name: sflow
+              containerPort: {{ .Values.inlet.containerPorts.sflow }}
               protocol: UDP
-            - containerPort: 10179
+            - name: http
+              containerPort: {{ .Values.inlet.containerPorts.http }}
               protocol: TCP
           volumeMounts:
-            - mountPath: /run/akvorado
+            - mountPath: {{ .Values.inlet.persistence.mountPath }}
               name: akvorado-run
       restartPolicy: Always
       volumes:
         - name: akvorado-run
           persistentVolumeClaim:
-            claimName: akvorado-run
+            claimName: {{ include "akvorado.inlet.fullname" . }}
+{{- end }}
